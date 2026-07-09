@@ -1,0 +1,131 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#define MAX 10
+#define LIMIT 2
+
+struct Question 
+{
+    char question[200];
+    char optionA[100], optionB[100], optionC[100], optionD[100];
+    char correct;
+};
+
+// Check if name is only letters
+int isValidName(char name[]) 
+{
+    for (int i = 0; name[i] != '\0'; i++) 
+    {
+        if (!((name[i] >= 'A' && name[i] <= 'Z') || (name[i] >= 'a' && name[i] <= 'z')))
+            return 0;
+    }
+    return 1;
+}
+
+// Load questions from file
+int loadQuestions(struct Question quiz[]) 
+{
+    FILE *f = fopen("questions.txt", "r");
+    if (!f) 
+    {
+        printf("Cannot open questions.txt\n");
+        return 0;
+    }
+
+    char line[512];
+    int i = 0;
+    while (fgets(line, sizeof(line), f) && i < MAX) 
+    {
+        char *token = strtok(line, "|");
+        strcpy(quiz[i].question, token);
+
+        strcpy(quiz[i].optionA, strtok(NULL, "|"));
+        strcpy(quiz[i].optionB, strtok(NULL, "|"));
+        strcpy(quiz[i].optionC, strtok(NULL, "|"));
+        strcpy(quiz[i].optionD, strtok(NULL, "|"));
+        quiz[i].correct = strtok(NULL, "|\n")[0];
+
+        i++;
+    }
+    fclose(f);
+    return i;
+}
+
+// Ask 2 random questions
+int conductQuiz(struct Question quiz[], int total) 
+{
+    int used[MAX] = {0}, score = 0;
+    srand(time(NULL));
+    int count = 0;
+
+    while (count < LIMIT) {
+        int r = rand() % total;
+        if (!used[r]) 
+        {
+            used[r] = 1;
+            printf("\nQ%d: %s\n%s\n%s\n%s\n%s\n", count + 1,
+                   quiz[r].question, quiz[r].optionA, quiz[r].optionB,
+                   quiz[r].optionC, quiz[r].optionD);
+            char ans;
+            printf("Your answer (A/B/C/D): ");
+            scanf(" %c", &ans);
+
+            if (ans == quiz[r].correct || ans == quiz[r].correct + 32) 
+            {
+                printf("Correct!\n");
+                score++;
+            } else {
+                printf("Wrong! Correct answer is %c\n", quiz[r].correct);
+            }
+            count++;
+        }
+    }
+    return score;
+}
+
+// Save score
+void saveScore(char name[], int score) 
+{
+    FILE *f;
+    char file[100];
+    sprintf(file, "%s.txt", name);
+    f = fopen(file, "a");
+    if (f) 
+    {
+        fprintf(f, "Score: %d out of %d\n", score, LIMIT);
+        fclose(f);
+    }
+}
+
+int main() 
+{
+    struct Question quiz[MAX];
+    char name[50];
+
+    printf("=== BrainTest C ===\n");
+
+    // Get valid name
+    do 
+    {
+        printf("Enter your name: ");
+        scanf("%s", name);
+        if (!isValidName(name))
+            printf("Invalid name. Use letters only.\n");
+    } while (!isValidName(name));
+
+    int total = loadQuestions(quiz);
+    if (total < LIMIT) 
+    {
+        printf("Not enough questions.\n");
+        return 1;
+    }
+
+    int score = conductQuiz(quiz, total);
+    printf("\n%s, you scored %d out of %d\n", name, score, LIMIT);
+    saveScore(name, score);
+
+    return 0;
+}
+   
