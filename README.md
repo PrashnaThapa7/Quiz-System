@@ -1,2 +1,2 @@
 # Quiz-System
-i made a quiz
+I made a Quiz.
